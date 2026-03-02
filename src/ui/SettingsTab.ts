@@ -9,7 +9,7 @@ export class SettingsTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Apple Journal Importer" });
+    new Setting(containerEl).setName("Apple Journal Importer").setHeading();
 
     new Setting(containerEl)
       .setName("Target folder")

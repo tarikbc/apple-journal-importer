@@ -46,7 +46,7 @@ export class ImportModal extends Modal {
           .onChange((val) => {
             this.exportPath = val;
           });
-        text.inputEl.style.width = "100%";
+        text.inputEl.addClass("apple-journal-path-input");
         // Allow pressing Enter to confirm
         text.inputEl.addEventListener("keydown", (e) => {
           if (e.key === "Enter") this.confirmPath();
@@ -54,8 +54,7 @@ export class ImportModal extends Modal {
       });
 
     // Suppress the default label layout so the input takes full width
-    pathSetting.settingEl.style.flexDirection = "column";
-    pathSetting.settingEl.style.alignItems = "stretch";
+    pathSetting.settingEl.addClass("apple-journal-path-setting");
 
     new Setting(contentEl).addButton((btn) => {
       btn

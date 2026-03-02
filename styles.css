@@ -58,10 +58,11 @@
   color: var(--text-error);
 }
 
-.apple-journal-importer-modal .path-setting .setting-item-control {
-  width: 100%;
+.apple-journal-path-setting {
+  flex-direction: column;
+  align-items: stretch;
 }
 
-.apple-journal-importer-modal .path-setting input[type="text"] {
+.apple-journal-path-input {
   width: 100%;
 }

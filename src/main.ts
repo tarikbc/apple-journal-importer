@@ -54,7 +54,9 @@ export default class AppleJournalImporterPlugin extends Plugin {
       file = await this.app.vault.create(notePath, content);
     }
 
-    await this.app.workspace.getLeaf(false).openFile(file as TFile);
+    if (file instanceof TFile) {
+      await this.app.workspace.getLeaf(false).openFile(file);
+    }
   }
 
   async loadSettings(): Promise<void> {

@@ -380,13 +380,12 @@ var ImportModal = class extends import_obsidian2.Modal {
       text.setPlaceholder("/Users/you/Downloads/AppleJournalEntries").setValue(this.exportPath).onChange((val) => {
         this.exportPath = val;
       });
-      text.inputEl.style.width = "100%";
+      text.inputEl.addClass("apple-journal-path-input");
       text.inputEl.addEventListener("keydown", (e) => {
         if (e.key === "Enter") this.confirmPath();
       });
     });
-    pathSetting.settingEl.style.flexDirection = "column";
-    pathSetting.settingEl.style.alignItems = "stretch";
+    pathSetting.settingEl.addClass("apple-journal-path-setting");
     new import_obsidian2.Setting(contentEl).addButton((btn) => {
       btn.setButtonText("Next \u2192").setCta().onClick(() => this.confirmPath());
     });
@@ -497,7 +496,7 @@ var SettingsTab = class extends import_obsidian3.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Apple Journal Importer" });
+    new import_obsidian3.Setting(containerEl).setName("Apple Journal Importer").setHeading();
     new import_obsidian3.Setting(containerEl).setName("Target folder").setDesc(
       "Vault folder where imported entries will be created. Will be created if it does not exist."
     ).addText((text) => {
@@ -570,7 +569,9 @@ tags:
 `;
       file = await this.app.vault.create(notePath, content);
     }
-    await this.app.workspace.getLeaf(false).openFile(file);
+    if (file instanceof import_obsidian4.TFile) {
+      await this.app.workspace.getLeaf(false).openFile(file);
+    }
   }
   async loadSettings() {
     this.settings = Object.assign(
