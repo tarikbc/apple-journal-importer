@@ -1,0 +1,10 @@
+{
+  "id": "apple-journal-importer",
+  "name": "Apple Journal Importer",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "Import Apple Journal exports into your vault as Markdown notes, with media conversion.",
+  "author": "tarikbc",
+  "authorUrl": "https://github.com/tarikbc",
+  "isDesktopOnly": true
+}

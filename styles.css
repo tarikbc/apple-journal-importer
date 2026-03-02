@@ -1,0 +1,67 @@
+.apple-journal-importer-modal .progress-wrap {
+  margin: 1rem 0;
+}
+
+.apple-journal-importer-modal progress {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.apple-journal-importer-modal .progress-label {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  word-break: break-all;
+}
+
+.apple-journal-importer-modal .summary-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin: 1rem 0;
+}
+
+.apple-journal-importer-modal .stat {
+  text-align: center;
+}
+
+.apple-journal-importer-modal .stat-value {
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-accent);
+}
+
+.apple-journal-importer-modal .stat-label {
+  font-size: 0.8em;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.apple-journal-importer-modal .stat-value.error {
+  color: var(--text-error);
+}
+
+.apple-journal-importer-modal .error-log {
+  max-height: 180px;
+  overflow-y: auto;
+  background: var(--background-secondary);
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.8em;
+  font-family: var(--font-monospace);
+  margin-top: 0.5rem;
+}
+
+.apple-journal-importer-modal .error-log p {
+  margin: 0.2rem 0;
+  color: var(--text-error);
+}
+
+.apple-journal-importer-modal .path-setting .setting-item-control {
+  width: 100%;
+}
+
+.apple-journal-importer-modal .path-setting input[type="text"] {
+  width: 100%;
+}
