@@ -4,26 +4,28 @@ import { Asset, JournalEntry } from "./types";
 // Asset → markdown line(s)
 // ---------------------------------------------------------------------------
 
-function assetToMarkdown(asset: Asset, mediaSubfolder: string): string {
+function assetToMarkdown(asset: Asset, _mediaSubfolder: string): string {
   const raw = asset.filename;
   if (!raw) return assetFallback(asset);
 
-  // HEIC and .jpeg files will have been normalised to .jpg by the importer
+  // HEIC and .jpeg files will have been normalised to .jpg by the importer.
+  // Use filename only (no path prefix) so Obsidian resolves by unique UUID name
+  // rather than treating it as a vault-root-relative path, which would fail
+  // when there are hundreds of folders all named "media".
   const displayName = raw.replace(/\.heic$/i, ".jpg").replace(/\.jpeg$/i, ".jpg");
-  const embedPath = `${mediaSubfolder}/${displayName}`;
 
   switch (asset.type) {
     case "photo":
-      return `![[${embedPath}]]`;
+      return `![[${displayName}]]`;
 
     case "video":
-      return `![[${embedPath}]]`;
+      return `![[${displayName}]]`;
 
     case "audio":
-      return `![[${embedPath}]]`;
+      return `![[${displayName}]]`;
 
     case "map": {
-      const img = `![[${embedPath}]]`;
+      const img = `![[${displayName}]]`;
       return asset.overlayText ? `📍 ${asset.overlayText}\n${img}` : img;
     }
 

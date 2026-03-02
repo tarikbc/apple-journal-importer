@@ -156,20 +156,19 @@ function parseHtmlEntry(htmlContent, sourcePath, filename) {
 }
 
 // src/converter.ts
-function assetToMarkdown(asset, mediaSubfolder) {
+function assetToMarkdown(asset, _mediaSubfolder) {
   const raw = asset.filename;
   if (!raw) return assetFallback(asset);
   const displayName = raw.replace(/\.heic$/i, ".jpg").replace(/\.jpeg$/i, ".jpg");
-  const embedPath = `${mediaSubfolder}/${displayName}`;
   switch (asset.type) {
     case "photo":
-      return `![[${embedPath}]]`;
+      return `![[${displayName}]]`;
     case "video":
-      return `![[${embedPath}]]`;
+      return `![[${displayName}]]`;
     case "audio":
-      return `![[${embedPath}]]`;
+      return `![[${displayName}]]`;
     case "map": {
-      const img = `![[${embedPath}]]`;
+      const img = `![[${displayName}]]`;
       return asset.overlayText ? `\u{1F4CD} ${asset.overlayText}
 ${img}` : img;
     }
@@ -237,10 +236,11 @@ async function writeNote(app, vaultPath, content) {
     await app.vault.create(vaultPath, content);
   }
 }
+var IMAGE_EXTS = /* @__PURE__ */ new Set([".heic", ".jpg", ".jpeg", ".png"]);
 async function copyMedia(srcPath, destAbsPath, convertHeic) {
   if (fs.existsSync(destAbsPath)) return;
   const ext = path.extname(srcPath).toLowerCase();
-  if (ext === ".heic" && convertHeic) {
+  if (IMAGE_EXTS.has(ext) && convertHeic) {
     await execFileAsync("sips", [
       "-s",
       "format",
@@ -260,7 +260,7 @@ async function processAssets(assets, resourcesDir, mediaFolderAbsPath, convertHe
     const srcPath = path.join(resourcesDir, asset.filename);
     if (!fs.existsSync(srcPath)) continue;
     const ext = path.extname(asset.filename).toLowerCase();
-    const destFilename = ext === ".heic" && convertHeic ? asset.filename.replace(/\.heic$/i, ".jpg") : ext === ".jpeg" ? asset.filename.replace(/\.jpeg$/i, ".jpg") : asset.filename;
+    const destFilename = IMAGE_EXTS.has(ext) && convertHeic ? path.basename(asset.filename, ext) + ".jpg" : asset.filename;
     const destAbsPath = path.join(mediaFolderAbsPath, destFilename);
     try {
       await copyMedia(srcPath, destAbsPath, convertHeic);

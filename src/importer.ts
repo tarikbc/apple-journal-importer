@@ -50,6 +50,10 @@ async function writeNote(
 // Media file handling
 // ---------------------------------------------------------------------------
 
+// Apple Journal exports HEIC content under any extension (.heic, .jpeg, .png).
+// We must convert all image-type files through sips rather than trusting the extension.
+const IMAGE_EXTS = new Set([".heic", ".jpg", ".jpeg", ".png"]);
+
 async function copyMedia(
   srcPath: string,
   destAbsPath: string,
@@ -59,15 +63,13 @@ async function copyMedia(
 
   const ext = path.extname(srcPath).toLowerCase();
 
-  if (ext === ".heic" && convertHeic) {
-    // sips is macOS-only, always available where Apple Journal runs
+  if (IMAGE_EXTS.has(ext) && convertHeic) {
+    // sips is macOS-only, always available where Apple Journal runs.
+    // Converts to real JPEG regardless of what the source extension claims.
     await execFileAsync("sips", [
-      "-s",
-      "format",
-      "jpeg",
+      "-s", "format", "jpeg",
       srcPath,
-      "--out",
-      destAbsPath,
+      "--out", destAbsPath,
     ]);
   } else {
     await fsp.copyFile(srcPath, destAbsPath);
@@ -89,11 +91,11 @@ async function processAssets(
     if (!fs.existsSync(srcPath)) continue;
 
     const ext = path.extname(asset.filename).toLowerCase();
+
+    // All image types normalise to .jpg so Obsidian can render them
     const destFilename =
-      ext === ".heic" && convertHeic
-        ? asset.filename.replace(/\.heic$/i, ".jpg")
-        : ext === ".jpeg"
-        ? asset.filename.replace(/\.jpeg$/i, ".jpg")
+      IMAGE_EXTS.has(ext) && convertHeic
+        ? path.basename(asset.filename, ext) + ".jpg"
         : asset.filename;
 
     const destAbsPath = path.join(mediaFolderAbsPath, destFilename);
@@ -101,7 +103,7 @@ async function processAssets(
     try {
       await copyMedia(srcPath, destAbsPath, convertHeic);
     } catch {
-      // If conversion fails, fall back to a plain copy
+      // sips failed — fall back to a raw copy so at least the file is there
       if (!fs.existsSync(destAbsPath)) {
         await fsp.copyFile(srcPath, destAbsPath);
       }
