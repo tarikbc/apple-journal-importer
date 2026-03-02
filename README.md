@@ -1,6 +1,6 @@
 # Apple Journal Importer for Obsidian
 
-An [Obsidian](https://obsidian.md) plugin that imports your [Apple Journal](https://support.apple.com/en-us/104993) export into your vault as clean Markdown notes — media included.
+An [Obsidian](https://obsidian.md) plugin that imports your [Apple Journal](https://support.apple.com/en/guide/iphone/iph0e5ca7dd3/ios) export into your vault as clean Markdown notes — media included.
 
 ![Obsidian Downloads](https://img.shields.io/badge/dynamic/json?logo=obsidian&color=%23483699&label=downloads&query=%24%5B%22apple-journal-importer%22%5D.downloads&url=https%3A%2F%2Fraw.githubusercontent.com%2Fobsidianmd%2Fobsidian-stats%2FHEAD%2Fcommunity-plugin-stats.json)
 
