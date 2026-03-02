@@ -92,6 +92,8 @@ async function processAssets(
     const destFilename =
       ext === ".heic" && convertHeic
         ? asset.filename.replace(/\.heic$/i, ".jpg")
+        : ext === ".jpeg"
+        ? asset.filename.replace(/\.jpeg$/i, ".jpg")
         : asset.filename;
 
     const destAbsPath = path.join(mediaFolderAbsPath, destFilename);

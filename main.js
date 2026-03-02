@@ -159,7 +159,7 @@ function parseHtmlEntry(htmlContent, sourcePath, filename) {
 function assetToMarkdown(asset, mediaSubfolder) {
   const raw = asset.filename;
   if (!raw) return assetFallback(asset);
-  const displayName = raw.replace(/\.heic$/i, ".jpg");
+  const displayName = raw.replace(/\.heic$/i, ".jpg").replace(/\.jpeg$/i, ".jpg");
   const embedPath = `${mediaSubfolder}/${displayName}`;
   switch (asset.type) {
     case "photo":
@@ -260,7 +260,7 @@ async function processAssets(assets, resourcesDir, mediaFolderAbsPath, convertHe
     const srcPath = path.join(resourcesDir, asset.filename);
     if (!fs.existsSync(srcPath)) continue;
     const ext = path.extname(asset.filename).toLowerCase();
-    const destFilename = ext === ".heic" && convertHeic ? asset.filename.replace(/\.heic$/i, ".jpg") : asset.filename;
+    const destFilename = ext === ".heic" && convertHeic ? asset.filename.replace(/\.heic$/i, ".jpg") : ext === ".jpeg" ? asset.filename.replace(/\.jpeg$/i, ".jpg") : asset.filename;
     const destAbsPath = path.join(mediaFolderAbsPath, destFilename);
     try {
       await copyMedia(srcPath, destAbsPath, convertHeic);

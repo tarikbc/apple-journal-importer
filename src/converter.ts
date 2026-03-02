@@ -8,8 +8,8 @@ function assetToMarkdown(asset: Asset, mediaSubfolder: string): string {
   const raw = asset.filename;
   if (!raw) return assetFallback(asset);
 
-  // HEIC files will have been converted to JPEG by the importer
-  const displayName = raw.replace(/\.heic$/i, ".jpg");
+  // HEIC and .jpeg files will have been normalised to .jpg by the importer
+  const displayName = raw.replace(/\.heic$/i, ".jpg").replace(/\.jpeg$/i, ".jpg");
   const embedPath = `${mediaSubfolder}/${displayName}`;
 
   switch (asset.type) {
