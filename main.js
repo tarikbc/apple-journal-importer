@@ -535,9 +535,38 @@ var AppleJournalImporterPlugin = class extends import_obsidian4.Plugin {
       name: "Import Apple Journal",
       callback: () => new ImportModal(this.app, this.settings).open()
     });
+    this.addCommand({
+      id: "new-journal-entry",
+      name: "New journal entry for today",
+      callback: () => this.createTodayEntry()
+    });
     this.addRibbonIcon("book-open", "Import Apple Journal", () => {
       new ImportModal(this.app, this.settings).open();
     });
+  }
+  async createTodayEntry() {
+    const today = /* @__PURE__ */ new Date();
+    const date = today.toISOString().slice(0, 10);
+    const dayFolder = (0, import_obsidian4.normalizePath)(`${this.settings.targetFolder}/${date}`);
+    const mediaFolder = (0, import_obsidian4.normalizePath)(`${dayFolder}/${this.settings.mediaSubfolder}`);
+    const notePath = (0, import_obsidian4.normalizePath)(`${dayFolder}/${date}.md`);
+    for (const folder of [this.settings.targetFolder, dayFolder, mediaFolder]) {
+      if (!this.app.vault.getAbstractFileByPath(folder)) {
+        await this.app.vault.createFolder(folder);
+      }
+    }
+    let file = this.app.vault.getAbstractFileByPath(notePath);
+    if (!(file instanceof import_obsidian4.TFile)) {
+      const content = `---
+date: ${date}
+tags:
+  - journal
+---
+
+`;
+      file = await this.app.vault.create(notePath, content);
+    }
+    await this.app.workspace.getLeaf(false).openFile(file);
   }
   async loadSettings() {
     this.settings = Object.assign(

@@ -1,4 +1,4 @@
-import { Plugin } from "obsidian";
+import { normalizePath, Plugin, TFile } from "obsidian";
 import { DEFAULT_SETTINGS, PluginSettings } from "./types";
 import { ImportModal } from "./ui/ImportModal";
 import { SettingsTab } from "./ui/SettingsTab";
@@ -17,9 +17,40 @@ export default class AppleJournalImporterPlugin extends Plugin {
       callback: () => new ImportModal(this.app, this.settings).open(),
     });
 
+    this.addCommand({
+      id: "new-journal-entry",
+      name: "New journal entry for today",
+      callback: () => this.createTodayEntry(),
+    });
+
     this.addRibbonIcon("book-open", "Import Apple Journal", () => {
       new ImportModal(this.app, this.settings).open();
     });
+  }
+
+  private async createTodayEntry(): Promise<void> {
+    const today = new Date();
+    const date = today.toISOString().slice(0, 10); // YYYY-MM-DD
+
+    const dayFolder = normalizePath(`${this.settings.targetFolder}/${date}`);
+    const mediaFolder = normalizePath(`${dayFolder}/${this.settings.mediaSubfolder}`);
+    const notePath = normalizePath(`${dayFolder}/${date}.md`);
+
+    // Create folders
+    for (const folder of [this.settings.targetFolder, dayFolder, mediaFolder]) {
+      if (!this.app.vault.getAbstractFileByPath(folder)) {
+        await this.app.vault.createFolder(folder);
+      }
+    }
+
+    // Create note if it doesn't exist yet, then open it
+    let file = this.app.vault.getAbstractFileByPath(notePath);
+    if (!(file instanceof TFile)) {
+      const content = `---\ndate: ${date}\ntags:\n  - journal\n---\n\n`;
+      file = await this.app.vault.create(notePath, content);
+    }
+
+    await this.app.workspace.getLeaf(false).openFile(file as TFile);
   }
 
   async loadSettings(): Promise<void> {
