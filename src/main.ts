@@ -30,7 +30,11 @@ export default class AppleJournalImporterPlugin extends Plugin {
 
   private async createTodayEntry(): Promise<void> {
     const today = new Date();
-    const date = today.toISOString().slice(0, 10); // YYYY-MM-DD
+    const date = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-"); // YYYY-MM-DD in local time
 
     const dayFolder = normalizePath(`${this.settings.targetFolder}/${date}`);
     const mediaFolder = normalizePath(`${dayFolder}/${this.settings.mediaSubfolder}`);

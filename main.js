@@ -546,7 +546,11 @@ var AppleJournalImporterPlugin = class extends import_obsidian4.Plugin {
   }
   async createTodayEntry() {
     const today = /* @__PURE__ */ new Date();
-    const date = today.toISOString().slice(0, 10);
+    const date = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0")
+    ].join("-");
     const dayFolder = (0, import_obsidian4.normalizePath)(`${this.settings.targetFolder}/${date}`);
     const mediaFolder = (0, import_obsidian4.normalizePath)(`${dayFolder}/${this.settings.mediaSubfolder}`);
     const notePath = (0, import_obsidian4.normalizePath)(`${dayFolder}/${date}.md`);
