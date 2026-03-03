@@ -496,7 +496,6 @@ var SettingsTab = class extends import_obsidian3.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    new import_obsidian3.Setting(containerEl).setName("Apple Journal Importer").setHeading();
     new import_obsidian3.Setting(containerEl).setName("Target folder").setDesc(
       "Vault folder where imported entries will be created. Will be created if it does not exist."
     ).addText((text) => {

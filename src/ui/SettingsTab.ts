@@ -9,7 +9,6 @@ export class SettingsTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    new Setting(containerEl).setName("Apple Journal Importer").setHeading();
 
     new Setting(containerEl)
       .setName("Target folder")
