@@ -76,19 +76,31 @@ async function copyMedia(
   }
 }
 
+interface MediaStats {
+  /** Filenames referenced by the entry but absent from Resources/ */
+  missing: string[];
+  /** Files whose conversion failed (a raw fallback copy is attempted) */
+  failed: Array<{ file: string; error: string }>;
+}
+
 async function processAssets(
   assets: Asset[],
   resourcesDir: string,
   mediaFolderAbsPath: string,
   convertHeic: boolean
-): Promise<void> {
+): Promise<MediaStats> {
   await fsp.mkdir(mediaFolderAbsPath, { recursive: true });
+
+  const stats: MediaStats = { missing: [], failed: [] };
 
   for (const asset of assets) {
     if (!asset.filename) continue;
 
     const srcPath = path.join(resourcesDir, asset.filename);
-    if (!fs.existsSync(srcPath)) continue;
+    if (!fs.existsSync(srcPath)) {
+      stats.missing.push(asset.filename);
+      continue;
+    }
 
     const ext = path.extname(asset.filename).toLowerCase();
 
@@ -102,13 +114,20 @@ async function processAssets(
 
     try {
       await copyMedia(srcPath, destAbsPath, convertHeic);
-    } catch {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      stats.failed.push({ file: asset.filename, error: message });
       // sips failed — fall back to a raw copy so at least the file is there
-      if (!fs.existsSync(destAbsPath)) {
+      try {
+        await fsp.rm(destAbsPath, { force: true }); // drop partial sips output
         await fsp.copyFile(srcPath, destAbsPath);
+      } catch {
+        // fallback copy failed too; the failure is already recorded
       }
     }
   }
+
+  return stats;
 }
 
 // ---------------------------------------------------------------------------
@@ -176,6 +195,8 @@ export async function runImport(
     imported: 0,
     skipped: 0,
     errors: [],
+    mediaMissing: [],
+    mediaErrors: [],
   };
 
   // Ensure the root target folder exists
@@ -205,12 +226,18 @@ export async function runImport(
       // Copy/convert media files (directly to filesystem, Obsidian will index them)
       if (entry.assets.some((a) => a.filename)) {
         const mediaFolderAbs = path.join(basePath, mediaFolder);
-        await processAssets(
+        const mediaStats = await processAssets(
           entry.assets,
           resourcesDir,
           mediaFolderAbs,
           settings.convertHeic
         );
+        for (const file of mediaStats.missing) {
+          result.mediaMissing.push({ entry: filename, file });
+        }
+        for (const failure of mediaStats.failed) {
+          result.mediaErrors.push({ entry: filename, ...failure });
+        }
       }
 
       // Write the markdown note via Obsidian API

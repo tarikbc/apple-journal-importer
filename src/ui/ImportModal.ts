@@ -166,12 +166,44 @@ export class ImportModal extends Modal {
     if (result.errors.length > 0) {
       this.createStat(stats, String(result.errors.length), "errors", true);
     }
+    if (result.mediaMissing.length > 0) {
+      this.createStat(
+        stats,
+        String(result.mediaMissing.length),
+        "media missing",
+        true
+      );
+    }
+    if (result.mediaErrors.length > 0) {
+      this.createStat(
+        stats,
+        String(result.mediaErrors.length),
+        "media errors",
+        true
+      );
+    }
 
     if (result.errors.length > 0) {
       contentEl.createEl("p", { text: "Errors:" });
       const log = contentEl.createDiv({ cls: "error-log" });
       for (const err of result.errors) {
         log.createEl("p", { text: `${err.entry}: ${err.error}` });
+      }
+    }
+
+    const mediaProblems = [
+      ...result.mediaMissing.map(
+        (m) => `${m.entry}: ${m.file} not found in the export's Resources/`
+      ),
+      ...result.mediaErrors.map(
+        (m) => `${m.entry}: ${m.file} — ${m.error.split("\n")[0]}`
+      ),
+    ];
+    if (mediaProblems.length > 0) {
+      contentEl.createEl("p", { text: "Media problems:" });
+      const log = contentEl.createDiv({ cls: "error-log" });
+      for (const line of mediaProblems) {
+        log.createEl("p", { text: line });
       }
     }
 

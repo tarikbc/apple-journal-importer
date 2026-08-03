@@ -54,4 +54,8 @@ export interface ImportResult {
   imported: number;
   skipped: number;
   errors: Array<{ entry: string; error: string }>;
+  /** Media referenced by an entry but not found in the export's Resources/ */
+  mediaMissing: Array<{ entry: string; file: string }>;
+  /** Media that failed to convert (a raw fallback copy may still exist) */
+  mediaErrors: Array<{ entry: string; file: string; error: string }>;
 }

@@ -60,15 +60,28 @@ function extractAssets(assetGrid: Element): Asset[] {
     const uuid = item.id ?? "";
     const type = classToAssetType(item.className);
 
-    // Try every media element for the src
-    const img = item.querySelector("img");
-    const videoSrc = item.querySelector("video source");
-    const audioSrc = item.querySelector("audio source");
-    const mediaEl = img ?? videoSrc ?? audioSrc;
+    // Try every media element for the src. Video/audio may carry the src
+    // directly on the tag rather than on a nested <source> element.
+    const rawSrc =
+      item.querySelector("img")?.getAttribute("src") ??
+      item.querySelector("video source")?.getAttribute("src") ??
+      item.querySelector("video")?.getAttribute("src") ??
+      item.querySelector("audio source")?.getAttribute("src") ??
+      item.querySelector("audio")?.getAttribute("src") ??
+      "";
 
-    const rawSrc = mediaEl?.getAttribute("src") ?? "";
     // Strip the leading "../Resources/" prefix Apple puts in the HTML
-    const filename = rawSrc.replace(/^\.\.\/Resources\//, "").replace(/^Resources\//, "");
+    const stripped = rawSrc
+      .replace(/^\.\.\/Resources\//, "")
+      .replace(/^Resources\//, "");
+
+    // src attributes are URL-encoded; the file on disk is not
+    let filename: string;
+    try {
+      filename = decodeURIComponent(stripped);
+    } catch {
+      filename = stripped;
+    }
 
     const overlayText =
       item.querySelector(".gridItemOverlayFooter")?.textContent?.trim() || undefined;
@@ -151,8 +164,11 @@ export function parseHtmlEntry(
   const htmlTitle = doc.querySelector(".title")?.textContent?.trim() ?? "";
   const title = htmlTitle || titleFromFilename;
 
-  const assetGrid = doc.querySelector(".assetGrid");
-  const assets = assetGrid ? extractAssets(assetGrid) : [];
+  // An entry can contain several asset grids (media groups between text blocks)
+  const assets: Asset[] = [];
+  for (const grid of Array.from(doc.querySelectorAll(".assetGrid"))) {
+    assets.push(...extractAssets(grid));
+  }
 
   const bodyEl = doc.querySelector(".bodyText");
   const bodyLines = bodyEl ? extractBodyLines(bodyEl) : [];

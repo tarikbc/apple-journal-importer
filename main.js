@@ -87,19 +87,21 @@ function classToAssetType(className) {
   return "unknown";
 }
 function extractAssets(assetGrid) {
-  var _a, _b, _c, _d, _e, _f, _g;
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o;
   const assets = [];
   for (const item of Array.from(assetGrid.querySelectorAll(".gridItem"))) {
     const uuid = (_a = item.id) != null ? _a : "";
     const type = classToAssetType(item.className);
-    const img = item.querySelector("img");
-    const videoSrc = item.querySelector("video source");
-    const audioSrc = item.querySelector("audio source");
-    const mediaEl = (_b = img != null ? img : videoSrc) != null ? _b : audioSrc;
-    const rawSrc = (_c = mediaEl == null ? void 0 : mediaEl.getAttribute("src")) != null ? _c : "";
-    const filename = rawSrc.replace(/^\.\.\/Resources\//, "").replace(/^Resources\//, "");
-    const overlayText = ((_e = (_d = item.querySelector(".gridItemOverlayFooter")) == null ? void 0 : _d.textContent) == null ? void 0 : _e.trim()) || void 0;
-    const duration = ((_g = (_f = item.querySelector(".durationText")) == null ? void 0 : _f.textContent) == null ? void 0 : _g.trim()) || void 0;
+    const rawSrc = (_k = (_j = (_h = (_f = (_d = (_b = item.querySelector("img")) == null ? void 0 : _b.getAttribute("src")) != null ? _d : (_c = item.querySelector("video source")) == null ? void 0 : _c.getAttribute("src")) != null ? _f : (_e = item.querySelector("video")) == null ? void 0 : _e.getAttribute("src")) != null ? _h : (_g = item.querySelector("audio source")) == null ? void 0 : _g.getAttribute("src")) != null ? _j : (_i = item.querySelector("audio")) == null ? void 0 : _i.getAttribute("src")) != null ? _k : "";
+    const stripped = rawSrc.replace(/^\.\.\/Resources\//, "").replace(/^Resources\//, "");
+    let filename;
+    try {
+      filename = decodeURIComponent(stripped);
+    } catch (e) {
+      filename = stripped;
+    }
+    const overlayText = ((_m = (_l = item.querySelector(".gridItemOverlayFooter")) == null ? void 0 : _l.textContent) == null ? void 0 : _m.trim()) || void 0;
+    const duration = ((_o = (_n = item.querySelector(".durationText")) == null ? void 0 : _n.textContent) == null ? void 0 : _o.trim()) || void 0;
     if (uuid || filename) {
       assets.push({ uuid, type, filename, overlayText, duration });
     }
@@ -148,8 +150,10 @@ function parseHtmlEntry(htmlContent, sourcePath, filename) {
   const doc = parser.parseFromString(htmlContent, "text/html");
   const htmlTitle = (_c = (_b = (_a = doc.querySelector(".title")) == null ? void 0 : _a.textContent) == null ? void 0 : _b.trim()) != null ? _c : "";
   const title = htmlTitle || titleFromFilename;
-  const assetGrid = doc.querySelector(".assetGrid");
-  const assets = assetGrid ? extractAssets(assetGrid) : [];
+  const assets = [];
+  for (const grid of Array.from(doc.querySelectorAll(".assetGrid"))) {
+    assets.push(...extractAssets(grid));
+  }
   const bodyEl = doc.querySelector(".bodyText");
   const bodyLines = bodyEl ? extractBodyLines(bodyEl) : [];
   return { date, title, assets, bodyLines, sourcePath, duplicateSuffix };
@@ -255,21 +259,30 @@ async function copyMedia(srcPath, destAbsPath, convertHeic) {
 }
 async function processAssets(assets, resourcesDir, mediaFolderAbsPath, convertHeic) {
   await fsp.mkdir(mediaFolderAbsPath, { recursive: true });
+  const stats = { missing: [], failed: [] };
   for (const asset of assets) {
     if (!asset.filename) continue;
     const srcPath = path.join(resourcesDir, asset.filename);
-    if (!fs.existsSync(srcPath)) continue;
+    if (!fs.existsSync(srcPath)) {
+      stats.missing.push(asset.filename);
+      continue;
+    }
     const ext = path.extname(asset.filename).toLowerCase();
     const destFilename = IMAGE_EXTS.has(ext) && convertHeic ? path.basename(asset.filename, ext) + ".jpg" : asset.filename;
     const destAbsPath = path.join(mediaFolderAbsPath, destFilename);
     try {
       await copyMedia(srcPath, destAbsPath, convertHeic);
-    } catch (e) {
-      if (!fs.existsSync(destAbsPath)) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      stats.failed.push({ file: asset.filename, error: message });
+      try {
+        await fsp.rm(destAbsPath, { force: true });
         await fsp.copyFile(srcPath, destAbsPath);
+      } catch (e) {
       }
     }
   }
+  return stats;
 }
 function resolveEntryPaths(entry, targetFolder, mediaSubfolder) {
   const date = entry.date || "unknown";
@@ -294,7 +307,9 @@ async function runImport(app, settings, exportPath, onProgress) {
     total: htmlFiles.length,
     imported: 0,
     skipped: 0,
-    errors: []
+    errors: [],
+    mediaMissing: [],
+    mediaErrors: []
   };
   await ensureVaultFolder(app, settings.targetFolder);
   const basePath = vaultBasePath(app);
@@ -313,12 +328,18 @@ async function runImport(app, settings, exportPath, onProgress) {
       await ensureVaultFolder(app, dayFolder);
       if (entry.assets.some((a) => a.filename)) {
         const mediaFolderAbs = path.join(basePath, mediaFolder);
-        await processAssets(
+        const mediaStats = await processAssets(
           entry.assets,
           resourcesDir,
           mediaFolderAbs,
           settings.convertHeic
         );
+        for (const file of mediaStats.missing) {
+          result.mediaMissing.push({ entry: filename, file });
+        }
+        for (const failure of mediaStats.failed) {
+          result.mediaErrors.push({ entry: filename, ...failure });
+        }
       }
       const markdown = entryToMarkdown(entry, settings.mediaSubfolder);
       await writeNote(app, noteFile, markdown);
@@ -467,11 +488,42 @@ var ImportModal = class extends import_obsidian2.Modal {
     if (result.errors.length > 0) {
       this.createStat(stats, String(result.errors.length), "errors", true);
     }
+    if (result.mediaMissing.length > 0) {
+      this.createStat(
+        stats,
+        String(result.mediaMissing.length),
+        "media missing",
+        true
+      );
+    }
+    if (result.mediaErrors.length > 0) {
+      this.createStat(
+        stats,
+        String(result.mediaErrors.length),
+        "media errors",
+        true
+      );
+    }
     if (result.errors.length > 0) {
       contentEl.createEl("p", { text: "Errors:" });
       const log = contentEl.createDiv({ cls: "error-log" });
       for (const err of result.errors) {
         log.createEl("p", { text: `${err.entry}: ${err.error}` });
+      }
+    }
+    const mediaProblems = [
+      ...result.mediaMissing.map(
+        (m) => `${m.entry}: ${m.file} not found in the export's Resources/`
+      ),
+      ...result.mediaErrors.map(
+        (m) => `${m.entry}: ${m.file} \u2014 ${m.error.split("\n")[0]}`
+      )
+    ];
+    if (mediaProblems.length > 0) {
+      contentEl.createEl("p", { text: "Media problems:" });
+      const log = contentEl.createDiv({ cls: "error-log" });
+      for (const line of mediaProblems) {
+        log.createEl("p", { text: line });
       }
     }
     new import_obsidian2.Setting(contentEl).addButton((btn) => {
