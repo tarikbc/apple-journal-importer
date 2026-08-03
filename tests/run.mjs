@@ -14,6 +14,7 @@ await build({
   entryPoints: [
     path.join(root, "tests/parser.test.ts"),
     path.join(root, "tests/importer.test.ts"),
+    path.join(root, "tests/converter.test.ts"),
   ],
   bundle: true,
   platform: "node",

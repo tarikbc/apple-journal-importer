@@ -10,6 +10,11 @@ export const DEFAULT_SETTINGS: PluginSettings = {
   mediaSubfolder: "media",
 };
 
+// Apple Journal exports HEIC content under any of these extensions, so the
+// importer converts them all to real JPEG via sips (when enabled). The
+// converter must rewrite note links with this same set so links match disk.
+export const CONVERTED_IMAGE_EXTS = new Set([".heic", ".jpg", ".jpeg", ".png"]);
+
 export type AssetType =
   | "photo"
   | "video"

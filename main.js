@@ -45,6 +45,7 @@ var DEFAULT_SETTINGS = {
   convertHeic: true,
   mediaSubfolder: "media"
 };
+var CONVERTED_IMAGE_EXTS = /* @__PURE__ */ new Set([".heic", ".jpg", ".jpeg", ".png"]);
 
 // src/ui/ImportModal.ts
 var import_obsidian2 = require("obsidian");
@@ -160,10 +161,17 @@ function parseHtmlEntry(htmlContent, sourcePath, filename) {
 }
 
 // src/converter.ts
-function assetToMarkdown(asset, _mediaSubfolder) {
+function displayNameFor(filename, convertImages) {
+  if (!convertImages) return filename;
+  const dot = filename.lastIndexOf(".");
+  if (dot === -1) return filename;
+  const ext = filename.slice(dot).toLowerCase();
+  return CONVERTED_IMAGE_EXTS.has(ext) ? filename.slice(0, dot) + ".jpg" : filename;
+}
+function assetToMarkdown(asset, convertImages) {
   const raw = asset.filename;
   if (!raw) return assetFallback(asset);
-  const displayName = raw.replace(/\.heic$/i, ".jpg").replace(/\.jpeg$/i, ".jpg");
+  const displayName = displayNameFor(raw, convertImages);
   switch (asset.type) {
     case "photo":
       return `![[${displayName}]]`;
@@ -194,7 +202,7 @@ function assetFallback(asset) {
       return "";
   }
 }
-function entryToMarkdown(entry, mediaSubfolder) {
+function entryToMarkdown(entry, _mediaSubfolder, convertImages) {
   const lines = [];
   lines.push("---");
   lines.push(`date: ${entry.date}`);
@@ -206,7 +214,7 @@ function entryToMarkdown(entry, mediaSubfolder) {
   lines.push("---");
   lines.push("");
   for (const asset of entry.assets) {
-    const md = assetToMarkdown(asset, mediaSubfolder);
+    const md = assetToMarkdown(asset, convertImages);
     if (md) {
       lines.push(md);
       lines.push("");
@@ -240,7 +248,7 @@ async function writeNote(app, vaultPath, content) {
     await app.vault.create(vaultPath, content);
   }
 }
-var IMAGE_EXTS = /* @__PURE__ */ new Set([".heic", ".jpg", ".jpeg", ".png"]);
+var IMAGE_EXTS = CONVERTED_IMAGE_EXTS;
 async function copyMedia(srcPath, destAbsPath, convertHeic) {
   if (fs.existsSync(destAbsPath)) return;
   const ext = path.extname(srcPath).toLowerCase();
@@ -341,7 +349,11 @@ async function runImport(app, settings, exportPath, onProgress) {
           result.mediaErrors.push({ entry: filename, ...failure });
         }
       }
-      const markdown = entryToMarkdown(entry, settings.mediaSubfolder);
+      const markdown = entryToMarkdown(
+        entry,
+        settings.mediaSubfolder,
+        settings.convertHeic
+      );
       await writeNote(app, noteFile, markdown);
       result.imported++;
     } catch (err) {

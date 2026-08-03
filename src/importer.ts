@@ -5,7 +5,13 @@ import * as path from "path";
 import { execFile } from "child_process";
 import { promisify } from "util";
 
-import { Asset, ImportResult, JournalEntry, PluginSettings } from "./types";
+import {
+  Asset,
+  CONVERTED_IMAGE_EXTS,
+  ImportResult,
+  JournalEntry,
+  PluginSettings,
+} from "./types";
 import { parseHtmlEntry } from "./parser";
 import { entryToMarkdown } from "./converter";
 
@@ -52,7 +58,7 @@ async function writeNote(
 
 // Apple Journal exports HEIC content under any extension (.heic, .jpeg, .png).
 // We must convert all image-type files through sips rather than trusting the extension.
-const IMAGE_EXTS = new Set([".heic", ".jpg", ".jpeg", ".png"]);
+const IMAGE_EXTS = CONVERTED_IMAGE_EXTS;
 
 async function copyMedia(
   srcPath: string,
@@ -241,7 +247,11 @@ export async function runImport(
       }
 
       // Write the markdown note via Obsidian API
-      const markdown = entryToMarkdown(entry, settings.mediaSubfolder);
+      const markdown = entryToMarkdown(
+        entry,
+        settings.mediaSubfolder,
+        settings.convertHeic
+      );
       await writeNote(app, noteFile, markdown);
 
       result.imported++;
