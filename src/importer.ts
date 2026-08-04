@@ -108,12 +108,16 @@ async function processAssets(
       continue;
     }
 
-    const ext = path.extname(asset.filename).toLowerCase();
+    const rawExt = path.extname(asset.filename);
+    const ext = rawExt.toLowerCase();
 
-    // All image types normalise to .jpg so Obsidian can render them
+    // All image types normalise to .jpg so Obsidian can render them.
+    // Strip by position rather than path.basename(file, ext), which does a
+    // case-sensitive suffix match — a ".HEIC" source would fail to match
+    // the lowercased ext and end up with a leftover ".HEIC.jpg" filename.
     const destFilename =
       IMAGE_EXTS.has(ext) && convertHeic
-        ? path.basename(asset.filename, ext) + ".jpg"
+        ? asset.filename.slice(0, asset.filename.length - rawExt.length) + ".jpg"
         : asset.filename;
 
     const destAbsPath = path.join(mediaFolderAbsPath, destFilename);
