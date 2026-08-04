@@ -43,9 +43,14 @@ export function parseEntryFilename(filename: string): {
 
 function classToAssetType(className: string): AssetType {
   if (className.includes("assetType_photo")) return "photo";
+  if (className.includes("assetType_livePhoto")) return "photo";
   if (className.includes("assetType_video")) return "video";
   if (className.includes("assetType_audio")) return "audio";
+  if (className.includes("assetType_music")) return "music";
   if (className.includes("assetType_multiPinMap")) return "map";
+  if (className.includes("assetType_genericMap")) return "map";
+  if (className.includes("assetType_workoutRoute")) return "workoutRoute";
+  if (className.includes("assetType_link")) return "link";
   if (className.includes("assetType_stateOfMind")) return "stateOfMind";
   if (className.includes("assetType_motionActivity")) return "motionActivity";
   if (className.includes("assetType_workoutIcon")) return "workoutIcon";
@@ -59,7 +64,10 @@ function extractAsset(item: Element): Asset | undefined {
 
   // Try every media element for the src. Video/audio may carry the src
   // directly on the tag rather than on a nested <source> element.
+  // Prefer img.asset_image: music items also carry mediaPlayIcon/mediaTypeIcon
+  // <img> tags earlier in the DOM, which aren't the actual asset.
   const rawSrc =
+    item.querySelector("img.asset_image")?.getAttribute("src") ??
     item.querySelector("img")?.getAttribute("src") ??
     item.querySelector("video source")?.getAttribute("src") ??
     item.querySelector("video")?.getAttribute("src") ??
@@ -80,13 +88,23 @@ function extractAsset(item: Element): Asset | undefined {
     filename = stripped;
   }
 
+  const activityType = item.querySelector(".activityType")?.textContent?.trim();
+  const activityMetrics = item.querySelector(".activityMetrics")?.textContent?.trim();
+  const routeCaption = [activityType, activityMetrics].filter(Boolean).join(" · ") || undefined;
+
   const overlayText =
-    item.querySelector(".gridItemOverlayFooter")?.textContent?.trim() || undefined;
+    item.querySelector(".gridItemOverlayFooter")?.textContent?.trim() ||
+    (type === "workoutRoute" ? routeCaption : undefined) ||
+    undefined;
   const duration =
     item.querySelector(".durationText")?.textContent?.trim() || undefined;
+  const href =
+    (type === "link" ? item.querySelector("a")?.getAttribute("href")?.trim() : undefined) ||
+    undefined;
+  const rawTypeClass = type === "unknown" ? item.className.trim() : undefined;
 
   if (!uuid && !filename) return undefined;
-  return { uuid, type, filename, overlayText, duration };
+  return { uuid, type, filename, overlayText, duration, href, rawTypeClass };
 }
 
 function extractAssets(assetGrid: Element): Asset[] {

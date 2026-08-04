@@ -89,3 +89,107 @@ test("extracts filename from a video element with a direct src attribute", () =>
 
   assert.equal(entry.assets[0].filename, "EEE-555.mov");
 });
+
+test("extracts a link-preview asset with its href", () => {
+  const html = entryHtml(`
+    <div class="assetGrid">
+      <div id="GGG-777" class="gridItem assetType_link " >
+        <a href='https://example.com/recipe'>
+        <img src="../Resources/GGG-777.heic" class="asset_image"/>
+        </a>
+      </div>
+    </div>`);
+
+  const entry = parseHtmlEntry(html, "/x/2024-01-01.html", "2024-01-01.html");
+
+  assert.equal(entry.assets[0].type, "link");
+  assert.equal(entry.assets[0].filename, "GGG-777.heic");
+  assert.equal(entry.assets[0].href, "https://example.com/recipe");
+});
+
+test("treats an empty href on a link-preview asset as absent", () => {
+  const html = entryHtml(`
+    <div class="assetGrid">
+      <div id="HHH-888" class="gridItem assetType_link " >
+        <a href=''>
+        <img src="../Resources/HHH-888.heic" class="asset_image"/>
+        </a>
+      </div>
+    </div>`);
+
+  const entry = parseHtmlEntry(html, "/x/2024-01-01.html", "2024-01-01.html");
+
+  assert.equal(entry.assets[0].href, undefined);
+});
+
+test("maps a generic (single-pin) map asset to the map type", () => {
+  const html = entryHtml(`
+    <div class="assetGrid">
+      <div id="III-999" class="gridItem assetType_genericMap " >
+        <img src="../Resources/III-999.heic" class="asset_image"/>
+      </div>
+    </div>`);
+
+  const entry = parseHtmlEntry(html, "/x/2024-01-01.html", "2024-01-01.html");
+
+  assert.equal(entry.assets[0].type, "map");
+});
+
+test("maps a live photo to the photo type", () => {
+  const html = entryHtml(`
+    <div class="assetGrid">
+      <div id="JJJ-000" class="gridItem assetType_livePhoto " >
+        <img src="../Resources/JJJ-000.heic" class="asset_image"/>
+      </div>
+    </div>`);
+
+  const entry = parseHtmlEntry(html, "/x/2024-01-01.html", "2024-01-01.html");
+
+  assert.equal(entry.assets[0].type, "photo");
+});
+
+test("extracts a workout route asset with its activity caption", () => {
+  const html = entryHtml(`
+    <div class="assetGrid">
+      <div id="KKK-111" class="gridItem assetType_workoutRoute " >
+        <div class="activityType">Outdoor Walk</div>
+        <img src="../Resources/KKK-111.heic" class="asset_image"/>
+        <div class="activityMetrics"><span class="activityMetricsDistance">2.87KM</span> · <span class="activityMetricsDuration">0:39:08</span></div>
+      </div>
+    </div>`);
+
+  const entry = parseHtmlEntry(html, "/x/2024-01-01.html", "2024-01-01.html");
+
+  assert.equal(entry.assets[0].type, "workoutRoute");
+  assert.equal(entry.assets[0].overlayText, "Outdoor Walk · 2.87KM · 0:39:08");
+});
+
+test("picks the actual album art for a music asset, not the reused play-icon", () => {
+  const html = entryHtml(`
+    <div class="assetGrid">
+      <div id="LLL-222" class="gridItem assetType_music " >
+        <img src="../Resources/mediaPlayIcon.heic" class="mediaPlayIcon" />
+        <img src="../Resources/LLL-222.heic" class="asset_image"/>
+        <img src="../Resources/musicIcon.heic" class="mediaTypeIcon" />
+      </div>
+    </div>`);
+
+  const entry = parseHtmlEntry(html, "/x/2024-01-01.html", "2024-01-01.html");
+
+  assert.equal(entry.assets[0].type, "music");
+  assert.equal(entry.assets[0].filename, "LLL-222.heic");
+});
+
+test("records the raw class name for an unrecognized asset type", () => {
+  const html = entryHtml(`
+    <div class="assetGrid">
+      <div id="MMM-333" class="gridItem assetType_futureThing " >
+        <img src="../Resources/MMM-333.heic" class="asset_image"/>
+      </div>
+    </div>`);
+
+  const entry = parseHtmlEntry(html, "/x/2024-01-01.html", "2024-01-01.html");
+
+  assert.equal(entry.assets[0].type, "unknown");
+  assert.equal(entry.assets[0].rawTypeClass, "gridItem assetType_futureThing");
+});

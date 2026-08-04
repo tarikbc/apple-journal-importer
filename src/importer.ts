@@ -203,6 +203,7 @@ export async function runImport(
     errors: [],
     mediaMissing: [],
     mediaErrors: [],
+    unrecognizedAssetTypes: [],
   };
 
   // Ensure the root target folder exists
@@ -219,6 +220,16 @@ export async function runImport(
       const htmlContent = await fsp.readFile(htmlPath, "utf-8");
 
       const entry: JournalEntry = parseHtmlEntry(htmlContent, htmlPath, filename);
+
+      for (const asset of entry.assets) {
+        if (asset.type === "unknown") {
+          result.unrecognizedAssetTypes.push({
+            entry: filename,
+            file: asset.filename || asset.uuid,
+            className: asset.rawTypeClass ?? "(no class)",
+          });
+        }
+      }
 
       const { dayFolder, noteFile, mediaFolder } = resolveEntryPaths(
         entry,

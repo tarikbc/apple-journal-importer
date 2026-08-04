@@ -182,6 +182,14 @@ export class ImportModal extends Modal {
         true
       );
     }
+    if (result.unrecognizedAssetTypes.length > 0) {
+      this.createStat(
+        stats,
+        String(result.unrecognizedAssetTypes.length),
+        "unrecognized asset types",
+        true
+      );
+    }
 
     if (result.errors.length > 0) {
       contentEl.createEl("p", { text: "Errors:" });
@@ -204,6 +212,16 @@ export class ImportModal extends Modal {
       const log = contentEl.createDiv({ cls: "error-log" });
       for (const line of mediaProblems) {
         log.createEl("p", { text: line });
+      }
+    }
+
+    if (result.unrecognizedAssetTypes.length > 0) {
+      contentEl.createEl("p", {
+        text: "Unrecognized asset types (still embedded, but flagged in the note):",
+      });
+      const log = contentEl.createDiv({ cls: "error-log" });
+      for (const u of result.unrecognizedAssetTypes) {
+        log.createEl("p", { text: `${u.entry}: ${u.file} — ${u.className}` });
       }
     }
 
