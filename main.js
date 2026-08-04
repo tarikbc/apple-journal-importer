@@ -333,8 +333,9 @@ async function processAssets(assets, resourcesDir, mediaFolderAbsPath, convertHe
       stats.missing.push(asset.filename);
       continue;
     }
-    const ext = path.extname(asset.filename).toLowerCase();
-    const destFilename = IMAGE_EXTS.has(ext) && convertHeic ? path.basename(asset.filename, ext) + ".jpg" : asset.filename;
+    const rawExt = path.extname(asset.filename);
+    const ext = rawExt.toLowerCase();
+    const destFilename = IMAGE_EXTS.has(ext) && convertHeic ? asset.filename.slice(0, asset.filename.length - rawExt.length) + ".jpg" : asset.filename;
     const destAbsPath = path.join(mediaFolderAbsPath, destFilename);
     try {
       await copyMedia(srcPath, destAbsPath, convertHeic);

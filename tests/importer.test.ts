@@ -88,3 +88,27 @@ test("reports failed image conversions instead of swallowing the error", async (
     "original bytes should still be copied as a fallback"
   );
 });
+
+test("normalizes an uppercase .HEIC extension to .jpg without a leftover .HEIC.jpg", async () => {
+  const { exportDir, vaultDir } = makeExport({
+    entries: { "2024-01-03.html": photoEntryHtml("Photo.HEIC") },
+    resources: { "Photo.HEIC": "this is not a real HEIC file" },
+  });
+  const { app } = makeFakeApp(vaultDir);
+
+  await runImport(
+    app as unknown as Parameters<typeof runImport>[0],
+    { ...DEFAULT_SETTINGS, convertHeic: true },
+    exportDir,
+    () => undefined
+  );
+
+  assert.ok(
+    fs.existsSync(path.join(vaultDir, "Journal/2024-01-03/media/Photo.jpg")),
+    "uppercase .HEIC should normalize to Photo.jpg"
+  );
+  assert.ok(
+    !fs.existsSync(path.join(vaultDir, "Journal/2024-01-03/media/Photo.HEIC.jpg")),
+    "should not leave a double .HEIC.jpg extension"
+  );
+});
