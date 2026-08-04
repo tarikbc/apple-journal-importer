@@ -13,6 +13,24 @@ function displayNameFor(filename: string, convertImages: boolean): string {
   return CONVERTED_IMAGE_EXTS.has(ext) ? filename.slice(0, dot) + ".jpg" : filename;
 }
 
+/**
+ * The href comes straight out of the export's HTML, so treat it as untrusted:
+ * allow only http(s) URLs and percent-encode anything that could break out of
+ * the markdown link syntax and inject content into the note.
+ */
+function safeMarkdownUrl(href: string): string | undefined {
+  if (!/^https?:\/\//i.test(href)) return undefined;
+  // encodeURIComponent leaves ( and ) alone, so percent-encode by hand
+  return href.replace(/[\s()<>[\]]/g, (c) => {
+    return "%" + c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0");
+  });
+}
+
+function unknownTypeWarning(asset: Asset): string {
+  const label = asset.rawTypeClass ? `\`${asset.rawTypeClass}\`` : "unrecognized type";
+  return `⚠️ Unrecognized asset type (${label}) — may need a plugin update`;
+}
+
 function assetToMarkdown(asset: Asset, convertImages: boolean): string {
   const raw = asset.filename;
   if (!raw) return assetFallback(asset);
@@ -47,7 +65,8 @@ function assetToMarkdown(asset: Asset, convertImages: boolean): string {
 
     case "link": {
       const img = `![[${displayName}]]`;
-      return asset.href ? `${img}\n[🔗 Link](${asset.href})` : img;
+      const url = asset.href ? safeMarkdownUrl(asset.href) : undefined;
+      return url ? `${img}\n[🔗 Link](${url})` : img;
     }
 
     case "stateOfMind": {
@@ -75,8 +94,7 @@ function assetToMarkdown(asset: Asset, convertImages: boolean): string {
       // exists and was copied/converted — embed it rather than silently
       // dropping it, and flag it so a plugin update can add proper support.
       const img = `![[${displayName}]]`;
-      const label = asset.rawTypeClass ? `\`${asset.rawTypeClass}\`` : "unrecognized type";
-      return `${img}\n⚠️ Unrecognized asset type (${label}) — may need a plugin update`;
+      return `${img}\n${unknownTypeWarning(asset)}`;
     }
 
     default:
@@ -84,6 +102,7 @@ function assetToMarkdown(asset: Asset, convertImages: boolean): string {
   }
 }
 
+/** Rendered when an asset has no extractable media file — still leave a trace. */
 function assetFallback(asset: Asset): string {
   switch (asset.type) {
     case "stateOfMind":
@@ -94,6 +113,16 @@ function assetFallback(asset: Asset): string {
       return "💪 Workout";
     case "contact":
       return "👤 Contact";
+    case "music":
+      return "🎵 Music";
+    case "workoutRoute":
+      return "🏃 Workout route";
+    case "link": {
+      const url = asset.href ? safeMarkdownUrl(asset.href) : undefined;
+      return url ? `[🔗 Link](${url})` : "🔗 Link";
+    }
+    case "unknown":
+      return unknownTypeWarning(asset);
     default:
       return "";
   }

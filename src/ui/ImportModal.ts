@@ -217,7 +217,7 @@ export class ImportModal extends Modal {
 
     if (result.unrecognizedAssetTypes.length > 0) {
       contentEl.createEl("p", {
-        text: "Unrecognized asset types (still embedded, but flagged in the note):",
+        text: "Unrecognized asset types (flagged in the note; embedded when a media file was found):",
       });
       const log = contentEl.createDiv({ cls: "error-log" });
       for (const u of result.unrecognizedAssetTypes) {

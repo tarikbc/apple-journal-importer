@@ -188,6 +188,16 @@ function displayNameFor(filename, convertImages) {
   const ext = filename.slice(dot).toLowerCase();
   return CONVERTED_IMAGE_EXTS.has(ext) ? filename.slice(0, dot) + ".jpg" : filename;
 }
+function safeMarkdownUrl(href) {
+  if (!/^https?:\/\//i.test(href)) return void 0;
+  return href.replace(/[\s()<>[\]]/g, (c) => {
+    return "%" + c.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0");
+  });
+}
+function unknownTypeWarning(asset) {
+  const label = asset.rawTypeClass ? `\`${asset.rawTypeClass}\`` : "unrecognized type";
+  return `\u26A0\uFE0F Unrecognized asset type (${label}) \u2014 may need a plugin update`;
+}
 function assetToMarkdown(asset, convertImages) {
   const raw = asset.filename;
   if (!raw) return assetFallback(asset);
@@ -213,8 +223,9 @@ ${img}` : img;
     }
     case "link": {
       const img = `![[${displayName}]]`;
-      return asset.href ? `${img}
-[\u{1F517} Link](${asset.href})` : img;
+      const url = asset.href ? safeMarkdownUrl(asset.href) : void 0;
+      return url ? `${img}
+[\u{1F517} Link](${url})` : img;
     }
     case "stateOfMind": {
       const img = `![[${displayName}]]`;
@@ -238,9 +249,8 @@ ${img}` : img;
     }
     case "unknown": {
       const img = `![[${displayName}]]`;
-      const label = asset.rawTypeClass ? `\`${asset.rawTypeClass}\`` : "unrecognized type";
       return `${img}
-\u26A0\uFE0F Unrecognized asset type (${label}) \u2014 may need a plugin update`;
+${unknownTypeWarning(asset)}`;
     }
     default:
       return assetFallback(asset);
@@ -256,6 +266,16 @@ function assetFallback(asset) {
       return "\u{1F4AA} Workout";
     case "contact":
       return "\u{1F464} Contact";
+    case "music":
+      return "\u{1F3B5} Music";
+    case "workoutRoute":
+      return "\u{1F3C3} Workout route";
+    case "link": {
+      const url = asset.href ? safeMarkdownUrl(asset.href) : void 0;
+      return url ? `[\u{1F517} Link](${url})` : "\u{1F517} Link";
+    }
+    case "unknown":
+      return unknownTypeWarning(asset);
     default:
       return "";
   }
@@ -618,7 +638,7 @@ var ImportModal = class extends import_obsidian2.Modal {
     }
     if (result.unrecognizedAssetTypes.length > 0) {
       contentEl.createEl("p", {
-        text: "Unrecognized asset types (still embedded, but flagged in the note):"
+        text: "Unrecognized asset types (flagged in the note; embedded when a media file was found):"
       });
       const log = contentEl.createDiv({ cls: "error-log" });
       for (const u of result.unrecognizedAssetTypes) {

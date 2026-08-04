@@ -100,3 +100,54 @@ test("still embeds an unrecognized asset type and flags it with a warning", () =
   assert.match(md, /!\[\[GGG\.jpg\]\]/);
   assert.match(md, /⚠️ Unrecognized asset type \(`gridItem assetType_futureThing`\)/);
 });
+
+test("drops the link line for a non-http href", () => {
+  const asset: Asset = {
+    uuid: "u10",
+    type: "link",
+    filename: "SAFE.heic",
+    href: "javascript:alert(1)",
+  };
+  const md = entryToMarkdown(entryWithAsset(asset), "media", true);
+  assert.match(md, /!\[\[SAFE\.jpg\]\]/);
+  assert.doesNotMatch(md, /🔗/);
+});
+
+test("escapes markdown-breaking characters in link hrefs", () => {
+  const asset: Asset = {
+    uuid: "u11",
+    type: "link",
+    filename: "GGG.heic",
+    href: "https://evil.example)[Click here](https://phish.example",
+  };
+  const md = entryToMarkdown(entryWithAsset(asset), "media", true);
+  assert.match(
+    md,
+    /\[🔗 Link\]\(https:\/\/evil\.example%29%5BClick%20here%5D%28https:\/\/phish\.example\)/
+  );
+  assert.doesNotMatch(md, /\)\[Click here\]/);
+});
+
+test("warns instead of silently dropping an unknown asset with no media file", () => {
+  const asset: Asset = {
+    uuid: "u12",
+    type: "unknown",
+    filename: "",
+    rawTypeClass: "gridItem assetType_futureThing",
+  };
+  const md = entryToMarkdown(entryWithAsset(asset), "media", true);
+  assert.match(md, /⚠️ Unrecognized asset type/);
+  assert.match(md, /assetType_futureThing/);
+});
+
+test("renders a link asset with no media file as just the link line", () => {
+  const asset: Asset = {
+    uuid: "u13",
+    type: "link",
+    filename: "",
+    href: "https://example.com/article",
+  };
+  const md = entryToMarkdown(entryWithAsset(asset), "media", true);
+  assert.match(md, /\[🔗 Link\]\(https:\/\/example\.com\/article\)/);
+  assert.doesNotMatch(md, /!\[\[/);
+});
