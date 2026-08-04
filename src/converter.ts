@@ -32,9 +32,31 @@ function assetToMarkdown(asset: Asset, convertImages: boolean): string {
     case "audio":
       return `![[${displayName}]]`;
 
+    case "music":
+      return `![[${displayName}]]`;
+
     case "map": {
       const img = `![[${displayName}]]`;
       return asset.overlayText ? `📍 ${asset.overlayText}\n${img}` : img;
+    }
+
+    case "workoutRoute": {
+      const img = `![[${displayName}]]`;
+      return asset.overlayText ? `🏃 ${asset.overlayText}\n${img}` : img;
+    }
+
+    case "link": {
+      const img = `![[${displayName}]]`;
+      return asset.href ? `${img}\n[🔗 Link](${asset.href})` : img;
+    }
+
+    case "unknown": {
+      // We don't know how to caption this asset, but the file itself
+      // exists and was copied/converted — embed it rather than silently
+      // dropping it, and flag it so a plugin update can add proper support.
+      const img = `![[${displayName}]]`;
+      const label = asset.rawTypeClass ? `\`${asset.rawTypeClass}\`` : "unrecognized type";
+      return `${img}\n⚠️ Unrecognized asset type (${label}) — may need a plugin update`;
     }
 
     default:

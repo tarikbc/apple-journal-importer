@@ -78,9 +78,14 @@ function parseEntryFilename(filename) {
 }
 function classToAssetType(className) {
   if (className.includes("assetType_photo")) return "photo";
+  if (className.includes("assetType_livePhoto")) return "photo";
   if (className.includes("assetType_video")) return "video";
   if (className.includes("assetType_audio")) return "audio";
+  if (className.includes("assetType_music")) return "music";
   if (className.includes("assetType_multiPinMap")) return "map";
+  if (className.includes("assetType_genericMap")) return "map";
+  if (className.includes("assetType_workoutRoute")) return "workoutRoute";
+  if (className.includes("assetType_link")) return "link";
   if (className.includes("assetType_stateOfMind")) return "stateOfMind";
   if (className.includes("assetType_motionActivity")) return "motionActivity";
   if (className.includes("assetType_workoutIcon")) return "workoutIcon";
@@ -88,10 +93,10 @@ function classToAssetType(className) {
   return "unknown";
 }
 function extractAsset(item) {
-  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o;
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w;
   const uuid = (_a = item.id) != null ? _a : "";
   const type = classToAssetType(item.className);
-  const rawSrc = (_k = (_j = (_h = (_f = (_d = (_b = item.querySelector("img")) == null ? void 0 : _b.getAttribute("src")) != null ? _d : (_c = item.querySelector("video source")) == null ? void 0 : _c.getAttribute("src")) != null ? _f : (_e = item.querySelector("video")) == null ? void 0 : _e.getAttribute("src")) != null ? _h : (_g = item.querySelector("audio source")) == null ? void 0 : _g.getAttribute("src")) != null ? _j : (_i = item.querySelector("audio")) == null ? void 0 : _i.getAttribute("src")) != null ? _k : "";
+  const rawSrc = (_m = (_l = (_j = (_h = (_f = (_d = (_b = item.querySelector("img.asset_image")) == null ? void 0 : _b.getAttribute("src")) != null ? _d : (_c = item.querySelector("img")) == null ? void 0 : _c.getAttribute("src")) != null ? _f : (_e = item.querySelector("video source")) == null ? void 0 : _e.getAttribute("src")) != null ? _h : (_g = item.querySelector("video")) == null ? void 0 : _g.getAttribute("src")) != null ? _j : (_i = item.querySelector("audio source")) == null ? void 0 : _i.getAttribute("src")) != null ? _l : (_k = item.querySelector("audio")) == null ? void 0 : _k.getAttribute("src")) != null ? _m : "";
   const stripped = rawSrc.replace(/^\.\.\/Resources\//, "").replace(/^Resources\//, "");
   let filename;
   try {
@@ -99,10 +104,15 @@ function extractAsset(item) {
   } catch (e) {
     filename = stripped;
   }
-  const overlayText = ((_m = (_l = item.querySelector(".gridItemOverlayFooter")) == null ? void 0 : _l.textContent) == null ? void 0 : _m.trim()) || void 0;
-  const duration = ((_o = (_n = item.querySelector(".durationText")) == null ? void 0 : _n.textContent) == null ? void 0 : _o.trim()) || void 0;
+  const activityType = (_o = (_n = item.querySelector(".activityType")) == null ? void 0 : _n.textContent) == null ? void 0 : _o.trim();
+  const activityMetrics = (_q = (_p = item.querySelector(".activityMetrics")) == null ? void 0 : _p.textContent) == null ? void 0 : _q.trim();
+  const routeCaption = [activityType, activityMetrics].filter(Boolean).join(" \xB7 ") || void 0;
+  const overlayText = ((_s = (_r = item.querySelector(".gridItemOverlayFooter")) == null ? void 0 : _r.textContent) == null ? void 0 : _s.trim()) || (type === "workoutRoute" ? routeCaption : void 0) || void 0;
+  const duration = ((_u = (_t = item.querySelector(".durationText")) == null ? void 0 : _t.textContent) == null ? void 0 : _u.trim()) || void 0;
+  const href = (type === "link" ? (_w = (_v = item.querySelector("a")) == null ? void 0 : _v.getAttribute("href")) == null ? void 0 : _w.trim() : void 0) || void 0;
+  const rawTypeClass = type === "unknown" ? item.className.trim() : void 0;
   if (!uuid && !filename) return void 0;
-  return { uuid, type, filename, overlayText, duration };
+  return { uuid, type, filename, overlayText, duration, href, rawTypeClass };
 }
 function extractAssets(assetGrid) {
   const assets = [];
@@ -188,10 +198,28 @@ function assetToMarkdown(asset, convertImages) {
       return `![[${displayName}]]`;
     case "audio":
       return `![[${displayName}]]`;
+    case "music":
+      return `![[${displayName}]]`;
     case "map": {
       const img = `![[${displayName}]]`;
       return asset.overlayText ? `\u{1F4CD} ${asset.overlayText}
 ${img}` : img;
+    }
+    case "workoutRoute": {
+      const img = `![[${displayName}]]`;
+      return asset.overlayText ? `\u{1F3C3} ${asset.overlayText}
+${img}` : img;
+    }
+    case "link": {
+      const img = `![[${displayName}]]`;
+      return asset.href ? `${img}
+[\u{1F517} Link](${asset.href})` : img;
+    }
+    case "unknown": {
+      const img = `![[${displayName}]]`;
+      const label = asset.rawTypeClass ? `\`${asset.rawTypeClass}\`` : "unrecognized type";
+      return `${img}
+\u26A0\uFE0F Unrecognized asset type (${label}) \u2014 may need a plugin update`;
     }
     default:
       return assetFallback(asset);
@@ -317,6 +345,7 @@ function resolveEntryPaths(entry, targetFolder, mediaSubfolder) {
   return { dayFolder, noteFile, mediaFolder };
 }
 async function runImport(app, settings, exportPath, onProgress) {
+  var _a;
   const entriesDir = path.join(exportPath, "Entries");
   const resourcesDir = path.join(exportPath, "Resources");
   const htmlFiles = fs.readdirSync(entriesDir).filter((f) => f.toLowerCase().endsWith(".html")).sort();
@@ -326,7 +355,8 @@ async function runImport(app, settings, exportPath, onProgress) {
     skipped: 0,
     errors: [],
     mediaMissing: [],
-    mediaErrors: []
+    mediaErrors: [],
+    unrecognizedAssetTypes: []
   };
   await ensureVaultFolder(app, settings.targetFolder);
   const basePath = vaultBasePath(app);
@@ -337,6 +367,15 @@ async function runImport(app, settings, exportPath, onProgress) {
       const htmlPath = path.join(entriesDir, filename);
       const htmlContent = await fsp.readFile(htmlPath, "utf-8");
       const entry = parseHtmlEntry(htmlContent, htmlPath, filename);
+      for (const asset of entry.assets) {
+        if (asset.type === "unknown") {
+          result.unrecognizedAssetTypes.push({
+            entry: filename,
+            file: asset.filename || asset.uuid,
+            className: (_a = asset.rawTypeClass) != null ? _a : "(no class)"
+          });
+        }
+      }
       const { dayFolder, noteFile, mediaFolder } = resolveEntryPaths(
         entry,
         settings.targetFolder,
@@ -525,6 +564,14 @@ var ImportModal = class extends import_obsidian2.Modal {
         true
       );
     }
+    if (result.unrecognizedAssetTypes.length > 0) {
+      this.createStat(
+        stats,
+        String(result.unrecognizedAssetTypes.length),
+        "unrecognized asset types",
+        true
+      );
+    }
     if (result.errors.length > 0) {
       contentEl.createEl("p", { text: "Errors:" });
       const log = contentEl.createDiv({ cls: "error-log" });
@@ -545,6 +592,15 @@ var ImportModal = class extends import_obsidian2.Modal {
       const log = contentEl.createDiv({ cls: "error-log" });
       for (const line of mediaProblems) {
         log.createEl("p", { text: line });
+      }
+    }
+    if (result.unrecognizedAssetTypes.length > 0) {
+      contentEl.createEl("p", {
+        text: "Unrecognized asset types (still embedded, but flagged in the note):"
+      });
+      const log = contentEl.createDiv({ cls: "error-log" });
+      for (const u of result.unrecognizedAssetTypes) {
+        log.createEl("p", { text: `${u.entry}: ${u.file} \u2014 ${u.className}` });
       }
     }
     new import_obsidian2.Setting(contentEl).addButton((btn) => {

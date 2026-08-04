@@ -6,6 +6,10 @@ import { JournalEntry, Asset } from "../src/types";
 
 function photoEntry(filename: string): JournalEntry {
   const asset: Asset = { uuid: "u1", type: "photo", filename };
+  return entryWithAsset(asset);
+}
+
+function entryWithAsset(asset: Asset): JournalEntry {
   return {
     date: "2024-01-01",
     title: "",
@@ -28,4 +32,47 @@ test("links png assets as .jpg when image conversion is on", () => {
 test("keeps original extensions when image conversion is off", () => {
   const md = entryToMarkdown(photoEntry("CCC.heic"), "media", false);
   assert.match(md, /!\[\[CCC\.heic\]\]/);
+});
+
+test("renders a link-preview asset as an image plus a clickable link", () => {
+  const asset: Asset = {
+    uuid: "u2",
+    type: "link",
+    filename: "DDD.heic",
+    href: "https://example.com/recipe",
+  };
+  const md = entryToMarkdown(entryWithAsset(asset), "media", true);
+  assert.match(md, /!\[\[DDD\.jpg\]\]/);
+  assert.match(md, /\[🔗 Link\]\(https:\/\/example\.com\/recipe\)/);
+});
+
+test("renders a link-preview asset without a href as just the image", () => {
+  const asset: Asset = { uuid: "u3", type: "link", filename: "EEE.heic" };
+  const md = entryToMarkdown(entryWithAsset(asset), "media", true);
+  assert.match(md, /!\[\[EEE\.jpg\]\]/);
+  assert.doesNotMatch(md, /🔗/);
+});
+
+test("renders a workout route asset with its activity caption", () => {
+  const asset: Asset = {
+    uuid: "u4",
+    type: "workoutRoute",
+    filename: "FFF.heic",
+    overlayText: "Outdoor Walk · 2.87KM · 0:39:08",
+  };
+  const md = entryToMarkdown(entryWithAsset(asset), "media", true);
+  assert.match(md, /!\[\[FFF\.jpg\]\]/);
+  assert.match(md, /🏃 Outdoor Walk · 2\.87KM · 0:39:08/);
+});
+
+test("still embeds an unrecognized asset type and flags it with a warning", () => {
+  const asset: Asset = {
+    uuid: "u5",
+    type: "unknown",
+    filename: "GGG.heic",
+    rawTypeClass: "gridItem assetType_futureThing",
+  };
+  const md = entryToMarkdown(entryWithAsset(asset), "media", true);
+  assert.match(md, /!\[\[GGG\.jpg\]\]/);
+  assert.match(md, /⚠️ Unrecognized asset type \(`gridItem assetType_futureThing`\)/);
 });

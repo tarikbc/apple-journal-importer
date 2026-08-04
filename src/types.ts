@@ -19,7 +19,10 @@ export type AssetType =
   | "photo"
   | "video"
   | "audio"
+  | "music"
   | "map"
+  | "link"
+  | "workoutRoute"
   | "stateOfMind"
   | "motionActivity"
   | "workoutIcon"
@@ -35,6 +38,10 @@ export interface Asset {
   overlayText?: string;
   /** Duration label for videos */
   duration?: string;
+  /** Target URL for link-preview assets */
+  href?: string;
+  /** Raw CSS class of the grid item, recorded only when type is "unknown" */
+  rawTypeClass?: string;
 }
 
 export interface JournalEntry {
@@ -63,4 +70,6 @@ export interface ImportResult {
   mediaMissing: Array<{ entry: string; file: string }>;
   /** Media that failed to convert (a raw fallback copy may still exist) */
   mediaErrors: Array<{ entry: string; file: string; error: string }>;
+  /** Assets whose Apple Journal type class wasn't recognized by the parser */
+  unrecognizedAssetTypes: Array<{ entry: string; file: string; className: string }>;
 }
