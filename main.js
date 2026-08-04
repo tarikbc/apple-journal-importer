@@ -93,7 +93,7 @@ function classToAssetType(className) {
   return "unknown";
 }
 function extractAsset(item) {
-  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w;
+  var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y;
   const uuid = (_a = item.id) != null ? _a : "";
   const type = classToAssetType(item.className);
   const rawSrc = (_m = (_l = (_j = (_h = (_f = (_d = (_b = item.querySelector("img.asset_image")) == null ? void 0 : _b.getAttribute("src")) != null ? _d : (_c = item.querySelector("img")) == null ? void 0 : _c.getAttribute("src")) != null ? _f : (_e = item.querySelector("video source")) == null ? void 0 : _e.getAttribute("src")) != null ? _h : (_g = item.querySelector("video")) == null ? void 0 : _g.getAttribute("src")) != null ? _j : (_i = item.querySelector("audio source")) == null ? void 0 : _i.getAttribute("src")) != null ? _l : (_k = item.querySelector("audio")) == null ? void 0 : _k.getAttribute("src")) != null ? _m : "";
@@ -104,12 +104,13 @@ function extractAsset(item) {
   } catch (e) {
     filename = stripped;
   }
-  const activityType = (_o = (_n = item.querySelector(".activityType")) == null ? void 0 : _n.textContent) == null ? void 0 : _o.trim();
-  const activityMetrics = (_q = (_p = item.querySelector(".activityMetrics")) == null ? void 0 : _p.textContent) == null ? void 0 : _q.trim();
-  const routeCaption = [activityType, activityMetrics].filter(Boolean).join(" \xB7 ") || void 0;
-  const overlayText = ((_s = (_r = item.querySelector(".gridItemOverlayFooter")) == null ? void 0 : _r.textContent) == null ? void 0 : _s.trim()) || (type === "workoutRoute" ? routeCaption : void 0) || void 0;
-  const duration = ((_u = (_t = item.querySelector(".durationText")) == null ? void 0 : _t.textContent) == null ? void 0 : _u.trim()) || void 0;
-  const href = (type === "link" ? (_w = (_v = item.querySelector("a")) == null ? void 0 : _v.getAttribute("href")) == null ? void 0 : _w.trim() : void 0) || void 0;
+  const overlayHeader = (_o = (_n = item.querySelector(".gridItemOverlayHeader")) == null ? void 0 : _n.textContent) == null ? void 0 : _o.trim();
+  const overlayFooter = (_q = (_p = item.querySelector(".gridItemOverlayFooter")) == null ? void 0 : _p.textContent) == null ? void 0 : _q.trim();
+  const activityType = (_s = (_r = item.querySelector(".activityType")) == null ? void 0 : _r.textContent) == null ? void 0 : _s.trim();
+  const activityMetrics = (_u = (_t = item.querySelector(".activityMetrics")) == null ? void 0 : _t.textContent) == null ? void 0 : _u.trim();
+  const overlayText = [overlayHeader, overlayFooter].filter(Boolean).join(" \xB7 ") || [activityType, activityMetrics].filter(Boolean).join(" \xB7 ") || void 0;
+  const duration = ((_w = (_v = item.querySelector(".durationText")) == null ? void 0 : _v.textContent) == null ? void 0 : _w.trim()) || void 0;
+  const href = (type === "link" ? (_y = (_x = item.querySelector("a")) == null ? void 0 : _x.getAttribute("href")) == null ? void 0 : _y.trim() : void 0) || void 0;
   const rawTypeClass = type === "unknown" ? item.className.trim() : void 0;
   if (!uuid && !filename) return void 0;
   return { uuid, type, filename, overlayText, duration, href, rawTypeClass };
@@ -214,6 +215,26 @@ ${img}` : img;
       const img = `![[${displayName}]]`;
       return asset.href ? `${img}
 [\u{1F517} Link](${asset.href})` : img;
+    }
+    case "stateOfMind": {
+      const img = `![[${displayName}]]`;
+      return asset.overlayText ? `\u{1F9E0} ${asset.overlayText}
+${img}` : img;
+    }
+    case "motionActivity": {
+      const img = `![[${displayName}]]`;
+      return asset.overlayText ? `\u{1F3C3} ${asset.overlayText}
+${img}` : img;
+    }
+    case "workoutIcon": {
+      const img = `![[${displayName}]]`;
+      return asset.overlayText ? `\u{1F4AA} ${asset.overlayText}
+${img}` : img;
+    }
+    case "contact": {
+      const img = `![[${displayName}]]`;
+      return asset.overlayText ? `\u{1F464} ${asset.overlayText}
+${img}` : img;
     }
     case "unknown": {
       const img = `![[${displayName}]]`;

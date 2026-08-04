@@ -65,6 +65,30 @@ test("renders a workout route asset with its activity caption", () => {
   assert.match(md, /🏃 Outdoor Walk · 2\.87KM · 0:39:08/);
 });
 
+test("renders a workout icon asset with its activity caption instead of dropping the image", () => {
+  const asset: Asset = {
+    uuid: "u6",
+    type: "workoutIcon",
+    filename: "HHH.heic",
+    overlayText: "5 Workouts · 3,734 KJ · 2:03:13",
+  };
+  const md = entryToMarkdown(entryWithAsset(asset), "media", true);
+  assert.match(md, /!\[\[HHH\.jpg\]\]/);
+  assert.match(md, /💪 5 Workouts · 3,734 KJ · 2:03:13/);
+});
+
+test("renders a state-of-mind asset with its mood caption instead of dropping the image", () => {
+  const asset: Asset = {
+    uuid: "u7",
+    type: "stateOfMind",
+    filename: "III.heic",
+    overlayText: "Calm · Health, Fitness",
+  };
+  const md = entryToMarkdown(entryWithAsset(asset), "media", true);
+  assert.match(md, /!\[\[III\.jpg\]\]/);
+  assert.match(md, /🧠 Calm · Health, Fitness/);
+});
+
 test("still embeds an unrecognized asset type and flags it with a warning", () => {
   const asset: Asset = {
     uuid: "u5",

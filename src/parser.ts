@@ -88,13 +88,17 @@ function extractAsset(item: Element): Asset | undefined {
     filename = stripped;
   }
 
+  // Caption text lives in different places depending on asset type:
+  // mood/contact use header+footer overlay text, activity/workout types
+  // use a separate activityType + activityMetrics pair.
+  const overlayHeader = item.querySelector(".gridItemOverlayHeader")?.textContent?.trim();
+  const overlayFooter = item.querySelector(".gridItemOverlayFooter")?.textContent?.trim();
   const activityType = item.querySelector(".activityType")?.textContent?.trim();
   const activityMetrics = item.querySelector(".activityMetrics")?.textContent?.trim();
-  const routeCaption = [activityType, activityMetrics].filter(Boolean).join(" · ") || undefined;
 
   const overlayText =
-    item.querySelector(".gridItemOverlayFooter")?.textContent?.trim() ||
-    (type === "workoutRoute" ? routeCaption : undefined) ||
+    [overlayHeader, overlayFooter].filter(Boolean).join(" · ") ||
+    [activityType, activityMetrics].filter(Boolean).join(" · ") ||
     undefined;
   const duration =
     item.querySelector(".durationText")?.textContent?.trim() || undefined;
