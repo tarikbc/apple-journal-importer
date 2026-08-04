@@ -53,44 +53,57 @@ function classToAssetType(className: string): AssetType {
   return "unknown";
 }
 
+function extractAsset(item: Element): Asset | undefined {
+  const uuid = item.id ?? "";
+  const type = classToAssetType(item.className);
+
+  // Try every media element for the src. Video/audio may carry the src
+  // directly on the tag rather than on a nested <source> element.
+  const rawSrc =
+    item.querySelector("img")?.getAttribute("src") ??
+    item.querySelector("video source")?.getAttribute("src") ??
+    item.querySelector("video")?.getAttribute("src") ??
+    item.querySelector("audio source")?.getAttribute("src") ??
+    item.querySelector("audio")?.getAttribute("src") ??
+    "";
+
+  // Strip the leading "../Resources/" prefix Apple puts in the HTML
+  const stripped = rawSrc
+    .replace(/^\.\.\/Resources\//, "")
+    .replace(/^Resources\//, "");
+
+  // src attributes are URL-encoded; the file on disk is not
+  let filename: string;
+  try {
+    filename = decodeURIComponent(stripped);
+  } catch {
+    filename = stripped;
+  }
+
+  const overlayText =
+    item.querySelector(".gridItemOverlayFooter")?.textContent?.trim() || undefined;
+  const duration =
+    item.querySelector(".durationText")?.textContent?.trim() || undefined;
+
+  if (!uuid && !filename) return undefined;
+  return { uuid, type, filename, overlayText, duration };
+}
+
 function extractAssets(assetGrid: Element): Asset[] {
   const assets: Asset[] = [];
+  const gridItems = Array.from(assetGrid.querySelectorAll(".gridItem"));
 
-  for (const item of Array.from(assetGrid.querySelectorAll(".gridItem"))) {
-    const uuid = item.id ?? "";
-    const type = classToAssetType(item.className);
+  if (gridItems.length === 0) {
+    // Apple Journal omits the .gridItem wrapper when there's only one asset;
+    // in that case the media element sits directly inside .assetGrid.
+    const single = extractAsset(assetGrid);
+    if (single) assets.push(single);
+    return assets;
+  }
 
-    // Try every media element for the src. Video/audio may carry the src
-    // directly on the tag rather than on a nested <source> element.
-    const rawSrc =
-      item.querySelector("img")?.getAttribute("src") ??
-      item.querySelector("video source")?.getAttribute("src") ??
-      item.querySelector("video")?.getAttribute("src") ??
-      item.querySelector("audio source")?.getAttribute("src") ??
-      item.querySelector("audio")?.getAttribute("src") ??
-      "";
-
-    // Strip the leading "../Resources/" prefix Apple puts in the HTML
-    const stripped = rawSrc
-      .replace(/^\.\.\/Resources\//, "")
-      .replace(/^Resources\//, "");
-
-    // src attributes are URL-encoded; the file on disk is not
-    let filename: string;
-    try {
-      filename = decodeURIComponent(stripped);
-    } catch {
-      filename = stripped;
-    }
-
-    const overlayText =
-      item.querySelector(".gridItemOverlayFooter")?.textContent?.trim() || undefined;
-    const duration =
-      item.querySelector(".durationText")?.textContent?.trim() || undefined;
-
-    if (uuid || filename) {
-      assets.push({ uuid, type, filename, overlayText, duration });
-    }
+  for (const item of gridItems) {
+    const asset = extractAsset(item);
+    if (asset) assets.push(asset);
   }
 
   return assets;

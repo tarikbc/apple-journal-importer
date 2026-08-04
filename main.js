@@ -87,25 +87,34 @@ function classToAssetType(className) {
   if (className.includes("assetType_contact")) return "contact";
   return "unknown";
 }
-function extractAssets(assetGrid) {
+function extractAsset(item) {
   var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o;
+  const uuid = (_a = item.id) != null ? _a : "";
+  const type = classToAssetType(item.className);
+  const rawSrc = (_k = (_j = (_h = (_f = (_d = (_b = item.querySelector("img")) == null ? void 0 : _b.getAttribute("src")) != null ? _d : (_c = item.querySelector("video source")) == null ? void 0 : _c.getAttribute("src")) != null ? _f : (_e = item.querySelector("video")) == null ? void 0 : _e.getAttribute("src")) != null ? _h : (_g = item.querySelector("audio source")) == null ? void 0 : _g.getAttribute("src")) != null ? _j : (_i = item.querySelector("audio")) == null ? void 0 : _i.getAttribute("src")) != null ? _k : "";
+  const stripped = rawSrc.replace(/^\.\.\/Resources\//, "").replace(/^Resources\//, "");
+  let filename;
+  try {
+    filename = decodeURIComponent(stripped);
+  } catch (e) {
+    filename = stripped;
+  }
+  const overlayText = ((_m = (_l = item.querySelector(".gridItemOverlayFooter")) == null ? void 0 : _l.textContent) == null ? void 0 : _m.trim()) || void 0;
+  const duration = ((_o = (_n = item.querySelector(".durationText")) == null ? void 0 : _n.textContent) == null ? void 0 : _o.trim()) || void 0;
+  if (!uuid && !filename) return void 0;
+  return { uuid, type, filename, overlayText, duration };
+}
+function extractAssets(assetGrid) {
   const assets = [];
-  for (const item of Array.from(assetGrid.querySelectorAll(".gridItem"))) {
-    const uuid = (_a = item.id) != null ? _a : "";
-    const type = classToAssetType(item.className);
-    const rawSrc = (_k = (_j = (_h = (_f = (_d = (_b = item.querySelector("img")) == null ? void 0 : _b.getAttribute("src")) != null ? _d : (_c = item.querySelector("video source")) == null ? void 0 : _c.getAttribute("src")) != null ? _f : (_e = item.querySelector("video")) == null ? void 0 : _e.getAttribute("src")) != null ? _h : (_g = item.querySelector("audio source")) == null ? void 0 : _g.getAttribute("src")) != null ? _j : (_i = item.querySelector("audio")) == null ? void 0 : _i.getAttribute("src")) != null ? _k : "";
-    const stripped = rawSrc.replace(/^\.\.\/Resources\//, "").replace(/^Resources\//, "");
-    let filename;
-    try {
-      filename = decodeURIComponent(stripped);
-    } catch (e) {
-      filename = stripped;
-    }
-    const overlayText = ((_m = (_l = item.querySelector(".gridItemOverlayFooter")) == null ? void 0 : _l.textContent) == null ? void 0 : _m.trim()) || void 0;
-    const duration = ((_o = (_n = item.querySelector(".durationText")) == null ? void 0 : _n.textContent) == null ? void 0 : _o.trim()) || void 0;
-    if (uuid || filename) {
-      assets.push({ uuid, type, filename, overlayText, duration });
-    }
+  const gridItems = Array.from(assetGrid.querySelectorAll(".gridItem"));
+  if (gridItems.length === 0) {
+    const single = extractAsset(assetGrid);
+    if (single) assets.push(single);
+    return assets;
+  }
+  for (const item of gridItems) {
+    const asset = extractAsset(item);
+    if (asset) assets.push(asset);
   }
   return assets;
 }
