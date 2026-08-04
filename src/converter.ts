@@ -50,6 +50,26 @@ function assetToMarkdown(asset: Asset, convertImages: boolean): string {
       return asset.href ? `${img}\n[🔗 Link](${asset.href})` : img;
     }
 
+    case "stateOfMind": {
+      const img = `![[${displayName}]]`;
+      return asset.overlayText ? `🧠 ${asset.overlayText}\n${img}` : img;
+    }
+
+    case "motionActivity": {
+      const img = `![[${displayName}]]`;
+      return asset.overlayText ? `🏃 ${asset.overlayText}\n${img}` : img;
+    }
+
+    case "workoutIcon": {
+      const img = `![[${displayName}]]`;
+      return asset.overlayText ? `💪 ${asset.overlayText}\n${img}` : img;
+    }
+
+    case "contact": {
+      const img = `![[${displayName}]]`;
+      return asset.overlayText ? `👤 ${asset.overlayText}\n${img}` : img;
+    }
+
     case "unknown": {
       // We don't know how to caption this asset, but the file itself
       // exists and was copied/converted — embed it rather than silently

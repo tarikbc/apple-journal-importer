@@ -180,6 +180,55 @@ test("picks the actual album art for a music asset, not the reused play-icon", (
   assert.equal(entry.assets[0].filename, "LLL-222.heic");
 });
 
+test("extracts a workout icon asset with its activity caption", () => {
+  const html = entryHtml(`
+    <div class="assetGrid">
+      <div id="NNN-444" class="gridItem assetType_workoutIcon multiple_workouts" >
+        <div class="activityType">5 Workouts</div>
+        <img src="../Resources/NNN-444.heic" class="asset_image"/>
+        <div class="activityMetrics"><span class="activityMetricsCalories">3,734 KJ</span> · <span class="activityMetricsDuration">2:03:13</span></div>
+      </div>
+    </div>`);
+
+  const entry = parseHtmlEntry(html, "/x/2024-01-01.html", "2024-01-01.html");
+
+  assert.equal(entry.assets[0].type, "workoutIcon");
+  assert.equal(entry.assets[0].filename, "NNN-444.heic");
+  assert.equal(entry.assets[0].overlayText, "5 Workouts · 3,734 KJ · 2:03:13");
+});
+
+test("extracts a motion activity asset with its activity caption", () => {
+  const html = entryHtml(`
+    <div class="assetGrid">
+      <div id="OOO-555" class="gridItem assetType_motionActivity " >
+        <div class="gridItemOverlayText activityType">Walk</div>
+        <img src="../Resources/OOO-555.heic" class="asset_image"/>
+        <div class="gridItemOverlayText activityMetrics">2,059 steps</div>
+      </div>
+    </div>`);
+
+  const entry = parseHtmlEntry(html, "/x/2024-01-01.html", "2024-01-01.html");
+
+  assert.equal(entry.assets[0].type, "motionActivity");
+  assert.equal(entry.assets[0].overlayText, "Walk · 2,059 steps");
+});
+
+test("extracts a state-of-mind asset with a mood + context caption", () => {
+  const html = entryHtml(`
+    <div class="assetGrid">
+      <div id="PPP-666" class="gridItem assetType_stateOfMind ">
+        <div class="gridItemOverlayText gridItemOverlayHeader">Calm</div>
+        <img src="../Resources/PPP-666.heic" class="asset_image"/>
+        <div class="gridItemOverlayText gridItemOverlayFooter">Health, Fitness</div>
+      </div>
+    </div>`);
+
+  const entry = parseHtmlEntry(html, "/x/2024-01-01.html", "2024-01-01.html");
+
+  assert.equal(entry.assets[0].type, "stateOfMind");
+  assert.equal(entry.assets[0].overlayText, "Calm · Health, Fitness");
+});
+
 test("records the raw class name for an unrecognized asset type", () => {
   const html = entryHtml(`
     <div class="assetGrid">
