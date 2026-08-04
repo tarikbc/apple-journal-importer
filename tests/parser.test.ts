@@ -64,6 +64,19 @@ test("decodes percent-encoded characters in src filenames", () => {
   assert.equal(entry.assets[0].filename, "My Photo é.heic");
 });
 
+test("extracts an asset when Apple Journal omits the .gridItem wrapper for a single asset", () => {
+  const html = entryHtml(`
+    <div class="assetGrid assetType_photo" id="FFF-666">
+      <img src="../Resources/FFF-666.heic">
+    </div>`);
+
+  const entry = parseHtmlEntry(html, "/x/2024-01-01.html", "2024-01-01.html");
+
+  assert.equal(entry.assets.length, 1);
+  assert.equal(entry.assets[0].filename, "FFF-666.heic");
+  assert.equal(entry.assets[0].type, "photo");
+});
+
 test("extracts filename from a video element with a direct src attribute", () => {
   const html = entryHtml(`
     <div class="assetGrid">
